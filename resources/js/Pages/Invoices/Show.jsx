@@ -1,12 +1,13 @@
+
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { 
-    ChevronLeft, 
-    Calendar, 
-    CreditCard, 
-    FileText, 
-    Clock, 
-    CheckCircle2, 
+import {
+    ChevronLeft,
+    Calendar,
+    CreditCard,
+    FileText,
+    Clock,
+    CheckCircle2,
     AlertCircle,
     Download,
     Edit2,
@@ -31,8 +32,8 @@ const ProgressBar = ({ total, paid }) => {
     const percentage = Math.min(Math.round((paid / total) * 100), 100);
     return (
         <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-            <div 
-                className="bg-primary-600 h-full transition-all duration-500" 
+            <div
+                className="bg-primary-600 h-full transition-all duration-500"
                 style={{ width: `${percentage}%` }}
             />
         </div>
@@ -143,7 +144,7 @@ export default function Show({ invoice }) {
                     </div>
                     <div className="flex items-center gap-3">
                         <StatusBadge status={invoice.status} />
-                        <a 
+                        <a
                             href={route('invoices.pdf', invoice.id)}
                             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#eef1f4] rounded-xl text-xs font-black hover:bg-gray-50 transition-all"
                         >
@@ -191,21 +192,21 @@ export default function Show({ invoice }) {
                                         <div className="flex items-center gap-2">
                                             <div className="relative w-28">
                                                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-                                                <input 
-                                                    type="number" 
+                                                <input
+                                                    type="number"
                                                     value={priceData.total_amount}
                                                     onChange={e => setPriceData('total_amount', e.target.value)}
                                                     className="w-full pl-6 pr-2 py-1.5 bg-[#fcfcfd] border-[#eef1f4] rounded-lg text-sm font-black focus:ring-primary-500"
                                                 />
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={submitPriceUpdate}
                                                 disabled={updatingPrice}
                                                 className="p-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
                                             >
                                                 <Save size={14} />
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     setIsEditingPrice(false);
                                                     setPriceData('total_amount', invoice.total_amount);
@@ -267,7 +268,7 @@ export default function Show({ invoice }) {
                                 <p className="text-xs font-bold text-gray-500">Flexible schedule management</p>
                             </div>
                             {invoice.type === 'installment' && (
-                                <button 
+                                <button
                                     onClick={() => setIsAddInstallmentOpen(true)}
                                     className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg shadow-primary-100"
                                 >
@@ -297,8 +298,8 @@ export default function Show({ invoice }) {
                                             </td>
                                             <td className="px-8 py-6">
                                                 {editingInstallment === inst.id ? (
-                                                    <input 
-                                                        type="date" 
+                                                    <input
+                                                        type="date"
                                                         value={data.due_date}
                                                         onChange={e => setData('due_date', e.target.value)}
                                                         className="w-full bg-white border-gray-200 rounded-xl text-xs font-bold focus:ring-primary-500 focus:border-primary-500"
@@ -316,8 +317,8 @@ export default function Show({ invoice }) {
                                                 {editingInstallment === inst.id ? (
                                                     <div className="relative">
                                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">$</span>
-                                                        <input 
-                                                            type="number" 
+                                                        <input
+                                                            type="number"
                                                             value={data.amount}
                                                             onChange={e => setData('amount', e.target.value)}
                                                             className="w-full pl-7 bg-white border-gray-200 rounded-xl text-xs font-black focus:ring-primary-500 focus:border-primary-500"
@@ -329,7 +330,7 @@ export default function Show({ invoice }) {
                                             </td>
                                             <td className="px-8 py-6">
                                                 {editingInstallment === inst.id ? (
-                                                    <select 
+                                                    <select
                                                         value={data.status}
                                                         onChange={e => setData('status', e.target.value)}
                                                         className="w-full bg-white border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest focus:ring-primary-500 focus:border-primary-500"
@@ -345,14 +346,14 @@ export default function Show({ invoice }) {
                                                 <div className="flex items-center justify-end gap-2">
                                                     {editingInstallment === inst.id ? (
                                                         <>
-                                                            <button 
+                                                            <button
                                                                 onClick={() => submitUpdate(inst.id)}
                                                                 disabled={processing}
                                                                 className="p-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50"
                                                             >
                                                                 <Save size={14} />
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={cancelEdit}
                                                                 className="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-colors"
                                                             >
@@ -361,7 +362,7 @@ export default function Show({ invoice }) {
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <a 
+                                                            <a
                                                                 href={route('invoices.installments.pdf', { invoice: invoice.id, installment: inst.id })}
                                                                 className="p-2.5 text-gray-300 hover:text-primary-600 transition-all inline-block"
                                                                 title="Download Receipt"
@@ -369,7 +370,7 @@ export default function Show({ invoice }) {
                                                                 <Download size={14} />
                                                             </a>
                                                             {inst.status === 'pending' && (
-                                                                <button 
+                                                                <button
                                                                     onClick={() => markAsPaid(inst.id, inst.amount, inst.due_date)}
                                                                     className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-[10px] font-black hover:bg-emerald-100 transition-all uppercase tracking-wider"
                                                                 >
@@ -377,7 +378,7 @@ export default function Show({ invoice }) {
                                                                     RECORD PAYMENT
                                                                 </button>
                                                             )}
-                                                            <button 
+                                                            <button
                                                                 onClick={() => startEdit(inst)}
                                                                 className="p-2.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
                                                             >
@@ -394,14 +395,14 @@ export default function Show({ invoice }) {
                         </div>
 
                         <div className="p-8 bg-gray-50/50 border-t border-gray-100">
-                             <div className="flex items-start gap-4">
+                            <div className="flex items-start gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
                                     <AlertCircle className="text-orange-500" size={20} />
                                 </div>
                                 <div className="flex-1">
                                     <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Financial Policy Context</h4>
                                     <p className="text-[10px] font-bold text-gray-500 mt-1 leading-relaxed">
-                                        Modifying scheduled installments will automatically recalculate the total balance of the master invoice. 
+                                        Modifying scheduled installments will automatically recalculate the total balance of the master invoice.
                                         Ensure all commitments are verified before finalizing changes. Payment records are immutable once audited.
                                     </p>
                                 </div>
