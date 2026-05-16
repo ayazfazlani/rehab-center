@@ -1,4 +1,3 @@
-
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import {
@@ -13,7 +12,10 @@ import {
     Edit2,
     Save,
     X,
-    Plus
+    Plus,
+    User,
+    Eye,
+    TrendingUp
 } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
@@ -31,9 +33,9 @@ function cn(...inputs) {
 const ProgressBar = ({ total, paid }) => {
     const percentage = Math.min(Math.round((paid / total) * 100), 100);
     return (
-        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
             <div
-                className="bg-primary-600 h-full transition-all duration-500"
+                className="bg-primary-600 h-full transition-all duration-700 ease-out"
                 style={{ width: `${percentage}%` }}
             />
         </div>
@@ -45,15 +47,22 @@ const StatusBadge = ({ status }) => {
         paid: "bg-emerald-50 text-emerald-700 border-emerald-100",
         unpaid: "bg-rose-50 text-rose-700 border-rose-100",
         partially_paid: "bg-blue-50 text-blue-700 border-blue-100",
-        pending: "bg-gray-50 text-gray-700 border-gray-100",
+        pending: "bg-slate-50 text-slate-700 border-slate-100",
+    };
+
+    const labelMap = {
+        paid: "Paid",
+        unpaid: "Unpaid",
+        partially_paid: "Partially Paid",
+        pending: "Pending",
     };
 
     return (
         <span className={cn(
-            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
+            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap",
             styles[status] || styles.pending
         )}>
-            {status.replace('_', ' ')}
+            {labelMap[status] || status.replace('_', ' ')}
         </span>
     );
 };
@@ -110,46 +119,64 @@ export default function Show({ invoice }) {
         reset();
     };
 
-    const submitUpdate = (id) => {
-        post(route('invoices.installments.update', { invoice: invoice.id, installment: id }), {
-            onSuccess: () => setEditingInstallment(null),
+    const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+    const [selectedInstallment, setSelectedInstallment] = useState(null);
+    const { data: payData, setData: setPayData, post: postPayment, processing: payingInstallment } = useForm({
+        amount: 0,
+        due_date: '',
+        status: 'paid',
+        reference_slip: null,
+    });
+
+    const openPayModal = (installment) => {
+        setSelectedInstallment(installment);
+        setPayData({
+            amount: installment.amount,
+            due_date: new Date(installment.due_date).toISOString().split('T')[0],
+            status: 'paid',
+            reference_slip: null,
+        });
+        setIsPayModalOpen(true);
+    };
+
+    const submitPayment = (e) => {
+        e.preventDefault();
+        postPayment(route('invoices.installments.update', { invoice: invoice.id, installment: selectedInstallment.id }), {
+            onSuccess: () => {
+                setIsPayModalOpen(false);
+                setSelectedInstallment(null);
+            }
         });
     };
 
-    const markAsPaid = (id, amount, date) => {
+    const submitUpdate = (id) => {
         post(route('invoices.installments.update', { invoice: invoice.id, installment: id }), {
-            data: {
-                amount,
-                due_date: date,
-                status: 'paid'
-            }
+            onSuccess: () => setEditingInstallment(null),
+            preserveScroll: true
         });
     };
 
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link href={route('invoices.index')} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-                            <ChevronLeft size={20} className="text-gray-500" />
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <Link href={route('invoices.index')} className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm">
+                            <ChevronLeft size={20} className="text-slate-600" />
                         </Link>
                         <div>
-                            <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Invoice Details</h2>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs font-bold text-gray-400">REFERENCE:</span>
-                                <span className="text-xs font-black text-primary-600">{invoice.invoice_number}</span>
-                            </div>
+                            <h2 className="text-xl lg:text-2xl font-bold tracking-tight text-slate-800">Invoice #{invoice.invoice_number}</h2>
+                            <p className="text-slate-500 text-[13px] font-medium">Billing details and payment schedule</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                         <StatusBadge status={invoice.status} />
                         <a
                             href={route('invoices.pdf', invoice.id)}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#eef1f4] rounded-xl text-xs font-black hover:bg-gray-50 transition-all"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm"
                         >
                             <Download size={14} />
-                            EXPORT PDF
+                            Download PDF
                         </a>
                     </div>
                 </div>
@@ -157,122 +184,120 @@ export default function Show({ invoice }) {
         >
             <Head title={`Invoice ${invoice.invoice_number}`} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
                 {/* Information Card */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white rounded-3xl border border-[#eef1f4] p-8 shadow-sm">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center">
-                                <FileText className="text-primary-600" />
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 lg:p-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                                <TrendingUp size={18} />
                             </div>
                             <div>
-                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">Financial Overview</h3>
-                                <p className="text-xs font-bold text-gray-500 mt-1">Full statement of accounts</p>
+                                <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-tight">Billing Summary</h3>
+                                <p className="text-[10px] font-bold text-slate-400 mt-0.5">Status of current charges</p>
                             </div>
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="space-y-5">
                             <div>
-                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Patient Associate</div>
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                    <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center font-black text-primary-600">
+                                <InputLabel className="text-slate-400 text-[9px] font-black uppercase tracking-[0.1em] mb-2" value="Patient Identity" />
+                                <div className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                                    <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-black text-primary-600 shadow-sm text-xs">
                                         {invoice.patient.first_name[0]}
                                     </div>
                                     <div>
-                                        <div className="text-xs font-black text-gray-900">{invoice.patient.first_name} {invoice.patient.last_name}</div>
-                                        <div className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">Record #{invoice.patient.id}</div>
+                                        <div className="text-[13px] font-black text-slate-800 leading-tight">{invoice.patient.first_name} {invoice.patient.last_name}</div>
+                                        <div className="text-[9px] text-slate-400 font-black uppercase tracking-tight mt-0.5">ID: {invoice.patient.id}</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="pt-6 border-t border-gray-100 space-y-4">
+                            <div className="pt-4 border-t border-slate-100 space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Total Amount</span>
+                                    <span className="text-[12px] font-bold text-slate-400 uppercase tracking-tight">Total Billing</span>
                                     {isEditingPrice ? (
                                         <div className="flex items-center gap-2">
                                             <div className="relative w-28">
-                                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
                                                 <input
                                                     type="number"
                                                     value={priceData.total_amount}
                                                     onChange={e => setPriceData('total_amount', e.target.value)}
-                                                    className="w-full pl-6 pr-2 py-1.5 bg-[#fcfcfd] border-[#eef1f4] rounded-lg text-sm font-black focus:ring-primary-500"
+                                                    className="w-full pl-6 pr-2 py-1.5 bg-white border-slate-200 rounded-lg text-xs font-black focus:ring-primary-500"
                                                 />
                                             </div>
-                                            <button
-                                                onClick={submitPriceUpdate}
-                                                disabled={updatingPrice}
-                                                className="p-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
-                                            >
-                                                <Save size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setIsEditingPrice(false);
-                                                    setPriceData('total_amount', invoice.total_amount);
-                                                }}
-                                                className="p-1.5 bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200 transition"
-                                            >
-                                                <X size={14} />
+                                            <button onClick={submitPriceUpdate} disabled={updatingPrice} className="p-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition shadow-sm">
+                                                <Save size={12} />
                                             </button>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-lg font-black text-gray-900">${Number(invoice.total_amount).toLocaleString()}</span>
+                                            <span className="text-base font-black text-slate-800">${Number(invoice.total_amount).toLocaleString()}</span>
                                             {invoice.type === 'once' && (
-                                                <button onClick={() => setIsEditingPrice(true)} className="text-gray-400 hover:text-primary-600 transition">
-                                                    <Edit2 size={14} />
+                                                <button onClick={() => setIsEditingPrice(true)} className="text-slate-300 hover:text-primary-600 transition p-1 hover:bg-slate-50 rounded-lg">
+                                                    <Edit2 size={11} />
                                                 </button>
                                             )}
                                         </div>
                                     )}
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Amount Paid</span>
-                                    <span className="text-lg font-black text-emerald-600">${Number(invoice.amount_paid).toLocaleString()}</span>
+                                    <span className="text-[12px] font-bold text-slate-400 uppercase tracking-tight">Total Paid</span>
+                                    <span className="text-base font-black text-emerald-600">${Number(invoice.amount_paid).toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between items-center pt-2">
-                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Balance Due</span>
-                                    <span className="text-2xl font-black text-rose-600">${Number(invoice.balance_due).toLocaleString()}</span>
+                                <div className="flex justify-between items-center pt-1">
+                                    <span className="text-[12px] font-bold text-slate-400 uppercase tracking-tight">Balance Due</span>
+                                    <span className="text-lg font-black text-rose-600">${Number(invoice.balance_due).toLocaleString()}</span>
                                 </div>
                             </div>
 
-                            <div className="pt-6">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Payment Progress</span>
-                                    <span className="text-[10px] font-black text-primary-600">{Math.round((invoice.amount_paid / invoice.total_amount) * 100)}%</span>
+                            <div className="pt-4 border-t border-slate-100">
+                                <div className="flex justify-between items-center mb-2.5">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Progress</span>
+                                    <span className="text-[11px] font-black text-primary-600">{Math.round((invoice.amount_paid / invoice.total_amount) * 100)}%</span>
                                 </div>
                                 <ProgressBar total={invoice.total_amount} paid={invoice.amount_paid} />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-primary-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-primary-100">
+                    <div className="bg-slate-900 rounded-2xl p-5 lg:p-6 text-white relative overflow-hidden shadow-lg border border-slate-800">
                         <div className="relative z-10">
-                            <Clock className="mb-4 opacity-50" />
-                            <h4 className="text-sm font-black uppercase tracking-widest opacity-80 mb-1">Upcoming Due Date</h4>
-                            <p className="text-2xl font-black tracking-tight underline underline-offset-4 decoration-white/30 truncate">
-                                {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'No Due Date'}
-                            </p>
+                            <div className="h-8 w-8 bg-white/10 rounded-lg flex items-center justify-center mb-4 border border-white/10">
+                                <Clock className="text-white/80" size={16} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Invoice Date</h4>
+                                    <p className="text-xs font-black tracking-tight leading-none text-white">
+                                        {invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Maturity</h4>
+                                    <p className="text-xs font-black tracking-tight leading-none text-white">
+                                        {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'PENDING'}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
                     </div>
                 </div>
 
                 {/* Installments Management */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white rounded-3xl border border-[#eef1f4] shadow-sm overflow-hidden">
-                        <div className="p-8 border-b border-[#eef1f4] flex items-center justify-between bg-[#FCFCFD]">
+                <div className="lg:col-span-8">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
-                                <h3 className="text-lg font-black tracking-tight text-[#1a1a1a]">Installment Lifecycle</h3>
-                                <p className="text-xs font-bold text-gray-500">Flexible schedule management</p>
+                                <h3 className="text-base font-bold text-slate-800 tracking-tight">Payment Schedule</h3>
+                                <p className="text-[13px] font-medium text-slate-500">Manage payment cycles and due dates</p>
                             </div>
                             {invoice.type === 'installment' && (
                                 <button
                                     onClick={() => setIsAddInstallmentOpen(true)}
-                                    className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg shadow-primary-100"
+                                    className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl font-bold text-[11px] uppercase tracking-wider flex items-center gap-2 transition-all shadow-sm"
                                 >
-                                    <Plus size={14} /> Add Installment
+                                    <Plus size={16} /> Add 
                                 </button>
                             )}
                         </div>
@@ -280,108 +305,92 @@ export default function Show({ invoice }) {
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr className="bg-gray-50">
-                                        <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Sequence</th>
-                                        <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Scheduled Date</th>
-                                        <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Commitment Amount</th>
-                                        <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Current Status</th>
-                                        <th className="px-8 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Operational Actions</th>
+                                    <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 uppercase text-[9px] font-black tracking-widest">
+                                        <th className="px-5 py-3.5 text-left">#</th>
+                                        <th className="px-5 py-3.5 text-left">Maturity</th>
+                                        <th className="px-5 py-3.5 text-left">Quote</th>
+                                        <th className="px-5 py-3.5 text-left">Status</th>
+                                        <th className="px-5 py-3.5 text-right">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y divide-slate-100 text-[13px]">
                                     {invoice.installments.map((inst, index) => (
-                                        <tr key={inst.id} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-8 py-6">
-                                                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-black text-gray-500">
+                                        <tr key={inst.id} className="hover:bg-slate-50/30 transition-colors">
+                                            <td className="px-5 py-3.5">
+                                                <div className="w-7 h-7 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-400 uppercase">
                                                     {index + 1}
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-6">
+                                            <td className="px-5 py-3.5">
                                                 {editingInstallment === inst.id ? (
                                                     <input
                                                         type="date"
                                                         value={data.due_date}
                                                         onChange={e => setData('due_date', e.target.value)}
-                                                        className="w-full bg-white border-gray-200 rounded-xl text-xs font-bold focus:ring-primary-500 focus:border-primary-500"
+                                                        className="w-full bg-slate-50 border-slate-200 rounded-lg text-xs font-bold p-1.5 focus:bg-white"
                                                     />
                                                 ) : (
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar size={14} className="text-gray-400" />
-                                                        <span className="text-xs font-black text-gray-700">
-                                                            {new Date(inst.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                        </span>
+                                                    <div className="flex items-center gap-2 text-slate-700 font-bold">
+                                                        {new Date(inst.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-8 py-6">
+                                            <td className="px-5 py-3.5 font-bold text-slate-800">
                                                 {editingInstallment === inst.id ? (
                                                     <div className="relative">
-                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">$</span>
+                                                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                                         <input
                                                             type="number"
                                                             value={data.amount}
                                                             onChange={e => setData('amount', e.target.value)}
-                                                            className="w-full pl-7 bg-white border-gray-200 rounded-xl text-xs font-black focus:ring-primary-500 focus:border-primary-500"
+                                                            className="w-full pl-6 bg-slate-50 border-slate-200 rounded-lg text-xs font-bold p-1.5 focus:bg-white"
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <div className="text-xs font-black text-gray-900">${Number(inst.amount).toLocaleString()}</div>
+                                                    `$${Number(inst.amount).toLocaleString()}`
                                                 )}
                                             </td>
-                                            <td className="px-8 py-6">
+                                            <td className="px-5 py-3.5">
                                                 {editingInstallment === inst.id ? (
                                                     <select
                                                         value={data.status}
                                                         onChange={e => setData('status', e.target.value)}
-                                                        className="w-full bg-white border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest focus:ring-primary-500 focus:border-primary-500"
+                                                        className="w-full bg-slate-50 border-slate-200 rounded-lg text-xs font-bold p-1.5"
                                                     >
-                                                        <option value="pending">Pending Audit</option>
-                                                        <option value="paid">Finalized Payment</option>
+                                                        <option value="pending">Pending</option>
+                                                        <option value="paid">Paid</option>
                                                     </select>
                                                 ) : (
                                                     <StatusBadge status={inst.status} />
                                                 )}
                                             </td>
-                                            <td className="px-8 py-6 text-right">
-                                                <div className="flex items-center justify-end gap-2">
+                                            <td className="px-5 py-3.5">
+                                                <div className="flex items-center justify-end gap-1.5">
                                                     {editingInstallment === inst.id ? (
                                                         <>
-                                                            <button
-                                                                onClick={() => submitUpdate(inst.id)}
-                                                                disabled={processing}
-                                                                className="p-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50"
-                                                            >
+                                                            <button onClick={() => submitUpdate(inst.id)} disabled={processing} className="p-1.5 bg-primary-600 text-white rounded-lg transition-all scale-90 hover:scale-100">
                                                                 <Save size={14} />
                                                             </button>
-                                                            <button
-                                                                onClick={cancelEdit}
-                                                                className="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-colors"
-                                                            >
+                                                            <button onClick={cancelEdit} className="p-1.5 bg-slate-100 text-slate-400 rounded-lg transition-all scale-90 hover:scale-100">
                                                                 <X size={14} />
                                                             </button>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <a
-                                                                href={route('invoices.installments.pdf', { invoice: invoice.id, installment: inst.id })}
-                                                                className="p-2.5 text-gray-300 hover:text-primary-600 transition-all inline-block"
-                                                                title="Download Receipt"
-                                                            >
-                                                                <Download size={14} />
+                                                            <a href={route('invoices.installments.pdf', { invoice: invoice.id, installment: inst.id })} target="_blank" className="p-1.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="View Installment">
+                                                                <Eye size={14} />
                                                             </a>
                                                             {inst.status === 'pending' && (
-                                                                <button
-                                                                    onClick={() => markAsPaid(inst.id, inst.amount, inst.due_date)}
-                                                                    className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-[10px] font-black hover:bg-emerald-100 transition-all uppercase tracking-wider"
-                                                                >
-                                                                    <CheckCircle2 size={12} />
-                                                                    RECORD PAYMENT
+                                                                <button onClick={() => openPayModal(inst)} className="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[9px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-all">
+                                                                    Collect
                                                                 </button>
                                                             )}
-                                                            <button
-                                                                onClick={() => startEdit(inst)}
-                                                                className="p-2.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
-                                                            >
+                                                            {inst.reference_slip && (
+                                                                <a href={`/storage/${inst.reference_slip}`} target="_blank" className="p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Slip">
+                                                                    <FileText size={14} />
+                                                                </a>
+                                                            )}
+                                                            <button onClick={() => startEdit(inst)} className="p-1.5 text-slate-300 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all">
                                                                 <Edit2 size={14} />
                                                             </button>
                                                         </>
@@ -394,16 +403,16 @@ export default function Show({ invoice }) {
                             </table>
                         </div>
 
-                        <div className="p-8 bg-gray-50/50 border-t border-gray-100">
+                        <div className="p-6 bg-slate-50/50 border-t border-slate-100">
                             <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                                    <AlertCircle className="text-orange-500" size={20} />
+                                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                                    <AlertCircle className="text-amber-500" size={20} />
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Financial Policy Context</h4>
-                                    <p className="text-[10px] font-bold text-gray-500 mt-1 leading-relaxed">
-                                        Modifying scheduled installments will automatically recalculate the total balance of the master invoice.
-                                        Ensure all commitments are verified before finalizing changes. Payment records are immutable once audited.
+                                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Payment Policy</h4>
+                                    <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">
+                                        Modifying scheduled installments will automatically recalculate the remaining balance of the master invoice.
+                                        Ensure all adjustments are reviewed before saving. Payment records are locked once marked as paid.
                                     </p>
                                 </div>
                             </div>
@@ -413,36 +422,94 @@ export default function Show({ invoice }) {
             </div>
 
             <Modal show={isAddInstallmentOpen} onClose={() => setIsAddInstallmentOpen(false)} maxWidth="md">
-                <form onSubmit={submitAdd} className="p-6 bg-white">
-                    <h2 className="text-lg font-black text-[#1a1a1a] mb-6 tracking-tight">Append Installment</h2>
-                    <div className="space-y-4">
+                <form onSubmit={submitAdd} className="p-0 bg-white overflow-hidden">
+                    <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+                        <h2 className="text-lg font-bold text-slate-800 tracking-tight">Add Payment Cycle</h2>
+                        <p className="text-slate-500 text-[13px] mt-1">Insert a new installment into the schedule</p>
+                    </div>
+                    
+                    <div className="p-6 space-y-5">
                         <div>
-                            <InputLabel className="text-[9px] font-black uppercase text-gray-400 tracking-widest" value="Valuation Amount (USD)" />
+                            <InputLabel className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-2" value="Amount (USD)" />
                             <TextInput
                                 type="number"
-                                className="mt-1 block w-full bg-[#f8fafc] border-[#eef1f4] text-xs font-black p-3.5 rounded-xl"
+                                className="w-full bg-slate-50 border-slate-200 rounded-xl text-sm font-bold p-3 focus:bg-white"
                                 value={addData.amount}
                                 onChange={e => setAddData('amount', e.target.value)}
                                 required
                             />
                         </div>
                         <div>
-                            <InputLabel className="text-[9px] font-black uppercase text-gray-400 tracking-widest" value="Settlement Target" />
+                            <InputLabel className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-2" value="Due Date" />
                             <TextInput
                                 type="date"
-                                className="mt-1 block w-full bg-[#f8fafc] border-[#eef1f4] text-xs font-black p-3.5 rounded-xl"
+                                className="w-full bg-slate-50 border-slate-200 rounded-xl text-sm font-bold p-3 focus:bg-white"
                                 value={addData.due_date}
                                 onChange={e => setAddData('due_date', e.target.value)}
                                 required
                             />
                         </div>
                     </div>
-                    <div className="mt-8 flex justify-end gap-3">
-                        <SecondaryButton onClick={() => setIsAddInstallmentOpen(false)} className="rounded-xl font-black text-[10px] uppercase">
-                            Abort
-                        </SecondaryButton>
-                        <PrimaryButton disabled={addingInstallment} className="rounded-xl font-black text-[10px] uppercase shadow-lg shadow-primary-100">
-                            Commit Addition
+
+                    <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/30">
+                        <button 
+                            type="button"
+                            onClick={() => setIsAddInstallmentOpen(false)} 
+                            className="px-5 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 transition"
+                        >
+                            Cancel
+                        </button>
+                        <PrimaryButton disabled={addingInstallment} className="bg-primary-600 hover:bg-primary-700 px-8 py-2.5 rounded-xl shadow-lg shadow-primary-100 text-sm">
+                            Add Installment
+                        </PrimaryButton>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Pay Installment Modal */}
+            <Modal show={isPayModalOpen} onClose={() => setIsPayModalOpen(false)} maxWidth="md">
+                <form onSubmit={submitPayment} className="p-0 bg-white overflow-hidden">
+                    <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+                        <h2 className="text-lg font-bold text-slate-800 tracking-tight">Collect Payment</h2>
+                        <p className="text-slate-500 text-[13px] mt-1 uppercase font-black tracking-widest">Mark Installment as Liquidated</p>
+                    </div>
+                    
+                    <div className="p-6 space-y-6">
+                        <div className="flex items-center gap-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                            <div className="w-10 h-10 rounded-xl bg-white border border-emerald-100 flex items-center justify-center text-emerald-600">
+                                <CreditCard size={20} />
+                            </div>
+                            <div>
+                                <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Amount Due</div>
+                                <div className="text-xl font-black text-slate-800">${Number(payData.amount).toLocaleString()}</div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <InputLabel className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-2" value="Reference Paid Slip (Optional)" />
+                            <div className="relative group">
+                                <input
+                                    type="file"
+                                    onChange={e => setPayData('reference_slip', e.target.files[0])}
+                                    className="w-full text-[11px] text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all cursor-pointer opacity-0 absolute inset-0 z-10"
+                                />
+                                <div className="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 text-center group-hover:border-indigo-300 transition-all">
+                                    <FileText className="mx-auto text-slate-300 mb-2" size={24} />
+                                    <div className="text-[11px] font-bold text-slate-500">
+                                        {payData.reference_slip ? payData.reference_slip.name : 'Click or drop to upload reference slip'}
+                                    </div>
+                                    <div className="text-[9px] text-slate-400 mt-1 uppercase font-black">Support JPG, PNG, PDF (Max 2MB)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/30">
+                        <button type="button" onClick={() => setIsPayModalOpen(false)} className="px-5 py-2 text-[11px] font-black text-slate-400 hover:text-slate-600 transition uppercase tracking-widest">
+                            Cancel
+                        </button>
+                        <PrimaryButton disabled={payingInstallment} className="bg-emerald-600 hover:bg-emerald-700 px-8 py-2.5 rounded-xl shadow-lg shadow-emerald-100 text-[11px] font-black uppercase tracking-widest">
+                            Confirm Collection
                         </PrimaryButton>
                     </div>
                 </form>
@@ -450,4 +517,5 @@ export default function Show({ invoice }) {
         </AuthenticatedLayout>
     );
 }
+
 

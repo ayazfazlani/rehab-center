@@ -37,7 +37,9 @@ class InvoiceController extends Controller
             'total_amount' => 'required|numeric|min:0',
             'type' => 'required|in:once,installment',
             'due_date' => 'nullable|date',
-            'installment_count' => 'required_if:type,installment|integer|min:2|max:12',
+            'invoice_date' => 'nullable|date',
+            'initial_payment' => 'nullable|numeric|min:0|max:' . $request->total_amount,
+            'installment_count' => 'required_if:type,installment|integer|min:1|max:24',
         ]);
 
         $invoice = Invoice::create([
@@ -50,20 +52,36 @@ class InvoiceController extends Controller
             'balance_due' => $validated['total_amount'],
             'type' => $validated['type'],
             'due_date' => $validated['due_date'],
+            'invoice_date' => $validated['invoice_date'] ?? now(),
             'status' => 'unpaid',
         ]);
 
         if ($validated['type'] === 'installment') {
-            $count = $validated['installment_count'];
-            $amountPerInstallment = $validated['total_amount'] / $count;
+            $count = (int)$validated['installment_count'];
+            $initial = (float)($validated['initial_payment'] ?? 0);
+            $remaining = $validated['total_amount'] - $initial;
             
-            for ($i = 0; $i < $count; $i++) {
+            // Create first installment (Advance)
+            if ($initial > 0) {
                 $invoice->installments()->create([
                     'tenant_id' => $request->user()->tenant_id,
-                    'amount' => $amountPerInstallment,
-                    'due_date' => now()->addMonths($i + 1),
-                    'status' => 'pending',
+                    'amount' => $initial,
+                    'due_date' => now(),
+                    'status' => 'pending', // or 'paid' if you want it immediate
                 ]);
+                $count--; // One down
+            }
+
+            if ($count > 0 && $remaining > 0) {
+                $amountPerInstallment = $remaining / $count;
+                for ($i = 0; $i < $count; $i++) {
+                    $invoice->installments()->create([
+                        'tenant_id' => $request->user()->tenant_id,
+                        'amount' => $amountPerInstallment,
+                        'due_date' => now()->addMonths($i + 1),
+                        'status' => 'pending',
+                    ]);
+                }
             }
         }
 
@@ -147,14 +165,22 @@ class InvoiceController extends Controller
             'amount' => 'required|numeric|min:0',
             'due_date' => 'required|date',
             'status' => 'required|in:pending,paid',
+            'reference_slip' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
-        $installment->update([
+        $data = [
             'amount' => $validated['amount'],
             'due_date' => $validated['due_date'],
             'status' => $validated['status'],
             'paid_at' => $validated['status'] === 'paid' ? ($installment->paid_at ?? now()) : null,
-        ]);
+        ];
+
+        if ($request->hasFile('reference_slip')) {
+            $path = $request->file('reference_slip')->store('slips/' . $invoice->tenant_id, 'public');
+            $data['reference_slip'] = $path;
+        }
+
+        $installment->update($data);
 
         $invoice->updateBalance();
 

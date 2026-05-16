@@ -88,8 +88,8 @@ export default function Index({ roles, permissions }) {
             header={
                 <div className="flex justify-between items-center">
                     <div>
-                        <h2 className="text-xl lg:text-2xl font-black text-[#1c2b36]">Roles & Rules</h2>
-                        <p className="text-gray-400 text-[9px] font-black uppercase tracking-[0.15em] mt-1">Permission mapping and authority levels</p>
+                        <h2 className="text-lg lg:text-2xl font-black text-slate-800 tracking-tight">Roles & Rules</h2>
+                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.1em] mt-1">Permission mapping and authority levels</p>
                     </div>
                     <button 
                         onClick={() => {
@@ -106,96 +106,92 @@ export default function Index({ roles, permissions }) {
         >
             <Head title="Roles & Permissions" />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 {roles.map((role) => (
-                    <div key={role.id} className="bg-white rounded-2xl border border-[#dce3e8] overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
-                        <div className="p-6 border-b border-gray-50 flex justify-between items-start">
+                    <div key={role.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+                        <div className="p-5 border-b border-slate-50 flex justify-between items-start">
                             <div>
-                                <h3 className="text-sm font-black text-[#1a1a1a] uppercase tracking-tight">{role.name}</h3>
-                                <p className="text-[9px] text-gray-400 font-bold mt-1 uppercase tracking-widest">{role.permissions.length} Auth Nodes Assigned</p>
+                                <h3 className="text-[13px] font-black text-slate-800 uppercase tracking-tight">{role.name}</h3>
+                                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight">{role.permissions.length} Auth Nodes</p>
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
                                     onClick={() => openEditModal(role)}
-                                    className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                                    className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
                                 >
-                                    <Edit2 size={14} />
+                                    <Edit2 size={13} />
                                 </button>
-                                <button className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                                    <Trash2 size={14} />
+                                <button className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                                    <Trash2 size={13} />
                                 </button>
                             </div>
                         </div>
-                        <div className="p-6 bg-[#fcfcfd]/50">
+                        <div className="p-5 bg-slate-50/30">
                             <div className="flex flex-wrap gap-1.5">
                                 {role.permissions.map(p => (
-                                    <span key={p.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-[#eef1f4] text-[9px] font-black text-gray-500 uppercase tracking-tight">
+                                    <span key={p.id} className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-[9px] font-black text-slate-500 uppercase tracking-tight">
                                         <PermissionIcon name={p.name} />
                                         {p.name.split('-').join(' ')}
                                     </span>
                                 ))}
-                                {role.permissions.length === 0 && <span className="text-[9px] text-gray-300 font-black uppercase">No permissions.</span>}
+                                {role.permissions.length === 0 && <span className="text-[9px] text-slate-300 font-black uppercase italic">No permissions.</span>}
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            <Modal show={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} maxWidth="2xl">
-                <form onSubmit={submit} className="p-6 md:p-10 bg-white relative">
-                    <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-                        <ShieldAlert size={140} className="text-emerald-600" />
-                    </div>
-
-                    <div className="mb-10">
-                        <h2 className="text-xl lg:text-2xl font-black text-[#1a1a1a] tracking-tight">
+            <Modal show={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} maxWidth="xl">
+                <form onSubmit={submit} className="p-0 bg-white relative overflow-hidden">
+                    <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+                        <h2 className="text-lg font-bold text-slate-800 tracking-tight">
                             {editingRole ? 'Modify Authority' : 'Define Authority'}
                         </h2>
-                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-2">Map organizational functions to access levels</p>
+                        <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mt-1">Map organizational functions to access levels</p>
                     </div>
 
-                    <div className="space-y-10 relative z-10">
+                    <div className="p-6 space-y-6 relative z-10">
                         <div>
-                            <InputLabel className="text-gray-400 font-black uppercase text-[10px] mb-3 tracking-[0.2em]" value="Authority Designation (Role Name)" />
+                            <InputLabel className="text-slate-400 font-bold uppercase text-[9px] mb-2 tracking-widest" value="Authority Designation (Role Name)" />
                             <TextInput
-                                className="mt-1 block w-full bg-[#f8fafc] border-[#eef1f4] text-xs font-black p-4 rounded-2xl focus:bg-white transition-all shadow-inner"
+                                className="w-full bg-slate-50 border-slate-200 text-[13px] font-bold p-2.5 rounded-xl focus:bg-white transition-all shadow-inner"
                                 placeholder="e.g. Clinical Director"
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
                                 required
                             />
-                            {errors.name && <div className="text-rose-500 text-[10px] mt-2 font-black tracking-tighter uppercase">{errors.name}</div>}
+                            {errors.name && <div className="text-rose-500 text-[10px] mt-2 font-bold tracking-tighter uppercase">{errors.name}</div>}
                         </div>
 
                         <div>
-                            <div className="flex items-center justify-between mb-6">
-                                <InputLabel className="text-gray-400 font-black uppercase text-[10px] tracking-[0.2em]" value="Constraint Matrix (Permissions)" />
-                                <div className="text-[9px] font-black text-emerald-600 uppercase bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
-                                    {data.permissions.length} Nodes Active
+                            <div className="flex items-center justify-between mb-3">
+                                <InputLabel className="text-slate-400 font-bold uppercase text-[9px] tracking-widest" value="Constraint Matrix (Permissions)" />
+                                <div className="text-[9px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                                    {data.permissions.length} Active
                                 </div>
                             </div>
                             
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 {permissions.map(permission => (
                                     <button
                                         key={permission.id}
                                         type="button"
                                         onClick={() => togglePermission(permission.id)}
                                         className={cn(
-                                            "flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left",
+                                            "flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left",
                                             data.permissions.includes(permission.id)
                                                 ? "bg-emerald-50 border-emerald-500 text-emerald-800"
-                                                : "bg-[#fcfcfd] border-[#eef1f4] text-gray-400 hover:border-gray-200"
+                                                : "bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300"
                                         )}
                                     >
                                         <div className={cn(
-                                            "w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0",
-                                            data.permissions.includes(permission.id) ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white border-gray-200"
+                                            "w-4 h-4 rounded-md border flex items-center justify-center transition-all shrink-0",
+                                            data.permissions.includes(permission.id) ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white border-slate-300"
                                         )}>
-                                            {data.permissions.includes(permission.id) && <CheckCircle2 size={12} />}
+                                            {data.permissions.includes(permission.id) && <CheckCircle2 size={10} />}
                                         </div>
                                         <div className="min-w-0">
-                                            <div className="text-[10px] font-black uppercase tracking-tight truncate">
+                                            <div className="text-[9px] font-black uppercase tracking-tight truncate">
                                                 {permission.name.split('-').join(' ')}
                                             </div>
                                         </div>
@@ -205,11 +201,11 @@ export default function Index({ roles, permissions }) {
                         </div>
                     </div>
 
-                    <div className="mt-12 flex flex-col sm:flex-row justify-end gap-3 pt-8 border-t border-gray-100 relative z-10">
-                        <SecondaryButton onClick={() => setIsCreateModalOpen(false)} className="rounded-2xl font-black text-xs uppercase w-full sm:w-auto px-8 py-4 border-[#eef1f4] order-2 sm:order-1">
+                    <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/30">
+                        <SecondaryButton onClick={() => setIsCreateModalOpen(false)} className="rounded-xl px-6 py-2 text-[10px] font-black uppercase">
                             Cancel
                         </SecondaryButton>
-                        <PrimaryButton disabled={processing} className="rounded-2xl font-black text-xs uppercase w-full sm:w-auto px-12 py-4 bg-emerald-600 shadow-xl shadow-emerald-100 border-transparent order-1 sm:order-2">
+                        <PrimaryButton disabled={processing} className="rounded-xl px-8 py-2 bg-emerald-600 text-[11px] font-black uppercase shadow-lg shadow-emerald-100">
                             {editingRole ? 'Update Strategy' : 'Initialize Authority'}
                         </PrimaryButton>
                     </div>

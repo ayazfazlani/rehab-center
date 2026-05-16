@@ -22,10 +22,12 @@ class Invoice extends Model
         'status',
         'type',
         'due_date',
+        'invoice_date',
     ];
 
     protected $casts = [
         'due_date' => 'datetime',
+        'invoice_date' => 'date',
     ];
 
     public function patient()

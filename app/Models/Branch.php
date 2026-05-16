@@ -16,6 +16,7 @@ class Branch extends Model
         'location',
         'contact_email',
         'contact_phone',
+        'logo',
         'branding_logo',
         'branding_colors',
     ];

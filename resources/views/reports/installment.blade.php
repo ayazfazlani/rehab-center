@@ -1,28 +1,137 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <style>
-        body { font-family: sans-serif; color: #333; }
-        .header { border-bottom: 2px solid #0e91e9; padding-bottom: 20px; margin-bottom: 30px; }
-        .logo { font-size: 24px; font-weight: bold; color: #0e91e9; }
-        .branch-info { float: right; text-align: right; font-size: 12px; color: #666; }
-        .invoice-title { font-size: 32px; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; }
-        .details-grid { width: 100%; margin-bottom: 30px; }
-        .details-grid td { vertical-align: top; width: 50%; }
-        .label { font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px; }
-        .value { font-size: 14px; font-weight: bold; }
-        table.items { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        table.items th { background: #f0f7ff; color: #0e91e9; text-align: left; padding: 10px; font-size: 12px; }
-        table.items td { padding: 15px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
-        .summary { float: right; width: 250px; }
-        .summary-row { padding: 5px 0; border-bottom: 1px solid #eee; }
-        .summary-row.total { border-bottom: none; color: #0e91e9; font-size: 18px; font-weight: bold; padding-top: 10px; }
-        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-        .badge-paid { background: #e0fdf4; color: #10b981; }
-        .badge-unpaid { background: #fffbeb; color: #f59e0b; }
+        body {
+            font-family: sans-serif;
+            color: #333;
+        }
+
+        .header {
+            border-bottom: 2px solid #0e91e9;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0e91e9;
+        }
+
+        .branch-info {
+            float: right;
+            text-align: right;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .invoice-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .details-grid {
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .details-grid td {
+            vertical-align: top;
+            width: 50%;
+        }
+
+        .label {
+            font-size: 10px;
+            font-weight: bold;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        table.items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        table.items th {
+            background: #f0f7ff;
+            color: #0e91e9;
+            text-align: left;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        table.items td {
+            padding: 15px 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: -20px;
+            width: 100%;
+            text-align: center;
+            font-size: 9px;
+            color: #aaa;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .branding {
+            font-weight: bold;
+            color: #0e91e9;
+        }
+
+        .summary {
+            float: right;
+            width: 250px;
+        }
+
+        .summary-row {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .summary-row.total {
+            border-bottom: none;
+            color: #0e91e9;
+            font-size: 18px;
+            font-weight: bold;
+            padding-top: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-paid {
+            background: #e0fdf4;
+            color: #10b981;
+        }
+
+        .badge-unpaid {
+            background: #fffbeb;
+            color: #f59e0b;
+        }
     </style>
 </head>
+
 <body>
     <div class="header">
         <div class="branch-info">
@@ -30,7 +139,12 @@
             {{ $invoice->branch->location }}<br>
             {{ $invoice->branch->contact_phone }}
         </div>
-        <div class="logo">REHAB CENTER</div>
+        @if($invoice->branch->logo)
+            <img src="{{ public_path('storage/' . $invoice->branch->logo) }}"
+                style="height: 60px; max-width: 200px; object-fit: contain;">
+        @else
+            <div class="logo">REHAB CENTER</div>
+        @endif
     </div>
 
     <div class="invoice-title">Installment Invoice</div>
@@ -71,7 +185,7 @@
             <span>Amount Due:</span>
             <span style="float: right;">${{ number_format($installment->amount, 2) }}</span>
         </div>
-        
+
         <div style="margin-top: 20px; text-align: right;">
             <span class="badge {{ $installment->status === 'paid' ? 'badge-paid' : 'badge-unpaid' }}">
                 {{ $installment->status }}
@@ -80,7 +194,9 @@
     </div>
 
     <div class="footer">
-        Thank you for choosing Rehab Center. This is a computer-generated document.
+        This document was generated for <strong>{{ $invoice->branch->name }}</strong>.
+        All rights reserved. | <span class="branding">Developed by masofts.com</span>
     </div>
 </body>
+
 </html>

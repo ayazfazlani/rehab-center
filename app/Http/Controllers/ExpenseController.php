@@ -14,13 +14,23 @@ class ExpenseController extends Controller
     {
         $this->authorize('manage-expenses');
 
-        $branchId = $request->user()->current_branch_id;
-        $expenses = Expense::where('branch_id', $branchId)
-            ->latest()
-            ->paginate(15);
+        $query = Expense::where('branch_id', $request->user()->current_branch_id);
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('date', '<=', $request->end_date);
+        }
+
+        $expenses = $query->latest('date')
+            ->paginate(15)
+            ->withQueryString();
 
         return \Inertia\Inertia::render('Expenses/Index', [
-            'expenses' => $expenses
+            'expenses' => $expenses,
+            'filters' => $request->only(['start_date', 'end_date'])
         ]);
     }
 

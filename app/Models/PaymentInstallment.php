@@ -17,6 +17,7 @@ class PaymentInstallment extends Model
         'due_date',
         'paid_at',
         'status',
+        'reference_slip',
     ];
 
     protected $casts = [

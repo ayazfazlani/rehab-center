@@ -32,7 +32,12 @@ class BranchController extends Controller
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
             'contact_phone' => 'nullable|string|max:20',
+            'logo' => 'nullable|image|max:2048',
         ]);
+
+        if ($request->hasFile('logo')) {
+            $validated['logo'] = $request->file('logo')->store('logos', 'public');
+        }
 
         $branch = Branch::create([
             ...$validated,
@@ -46,27 +51,26 @@ class BranchController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Branch $branch)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Branch $branch)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, Branch $branch)
     {
-        //
+        $this->authorize('manage-branches');
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'contact_phone' => 'nullable|string|max:20',
+            'logo' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('logo')) {
+            $validated['logo'] = $request->file('logo')->store('logos', 'public');
+        }
+
+        $branch->update($validated);
+
+        return back()->with('success', 'Branch updated successfully.');
     }
 
     /**
@@ -74,6 +78,8 @@ class BranchController extends Controller
      */
     public function destroy(Branch $branch)
     {
-        //
+        $this->authorize('manage-branches');
+        $branch->delete();
+        return back()->with('success', 'Branch deleted.');
     }
 }

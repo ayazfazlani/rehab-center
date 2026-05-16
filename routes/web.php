@@ -24,6 +24,9 @@ use Illuminate\Http\Request;
 
 Route::middleware('auth')->group(function () {
     Route::post('/branches/switch', function (Request $request) {
+        if (!$request->user()->can('manage-branches')) {
+            abort(403, 'Unauthorized scope transition.');
+        }
         $request->validate(['branch_id' => 'required|exists:branches,id']);
         $request->user()->update(['current_branch_id' => $request->branch_id]);
         return back();
